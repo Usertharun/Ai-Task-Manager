@@ -1,30 +1,50 @@
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
 export const fetchGeminiText = async (prompt) => {
-  if (!API_KEY || API_KEY.trim() === '') {
-    throw new Error('No Gemini API Key provided in environment config.');
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  
+  if (apiKey) {
+     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+     const response = await fetch(url, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({
+         contents: [{ parts: [{ text: prompt }] }]
+       })
+     });
+     
+     if (!response.ok) {
+        const errText = await response.text();
+        try {
+           const errJson = JSON.parse(errText);
+           throw new Error(errJson.error?.message || "Unknown Gemini API Error");
+        } catch(e) {
+           throw new Error(`Gemini API Error: ${errText}`);
+        }
+     }
+     
+     const data = await response.json();
+     return data.candidates[0].content.parts[0].text.trim();
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
+  const url = `/api/generate`;
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }]
-    })
+    body: JSON.stringify({ prompt })
   });
   
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Gemini Error: ${errText}`);
-  }
-  
-  const data = await response.json();
-  if (!data.candidates || data.candidates.length === 0) {
-    throw new Error("Gemini returned no response chunk.");
+  // Handle non-JSON responses gracefully (e.g. Vite serving index.html)
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+     throw new Error("Local dev without Vercel CLI detected. Please add VITE_GEMINI_API_KEY to .env to use the AI Assistant locally.");
   }
 
-  return data.candidates[0].content.parts[0].text.trim();
+  const data = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to reach AI generation endpoint");
+  }
+
+  return data.text;
 };
 
 export const generateTasks = async (goal) => {

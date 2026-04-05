@@ -2,8 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { getTodayStr, getTomorrowStr } from '../hooks/useTasks';
 import { useVoice } from '../hooks/useVoice';
 
-export const TaskInput = ({ onAdd, pendingCount }) => {
-  const [title, setTitle] = useState('');
+export const TaskInput = ({ onAdd, pendingCount, initialTitle = '', onClearInitialTitle }) => {
+  const [title, setTitle] = useState(initialTitle);
+
+  useEffect(() => {
+    if (initialTitle) {
+      setTitle(initialTitle);
+      const input = document.getElementById('task-title-input');
+      if (input) {
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        input.focus();
+      }
+    }
+  }, [initialTitle]);
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Personal');
   const [priority, setPriority] = useState('Medium');
@@ -51,6 +62,7 @@ export const TaskInput = ({ onAdd, pendingCount }) => {
     setEnergy('Deep Work');
     setMotivation('');
     setFrictionWarning(false);
+    if (onClearInitialTitle) onClearInitialTitle();
   };
 
   return (

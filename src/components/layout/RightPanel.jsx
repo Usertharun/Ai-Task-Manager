@@ -1,12 +1,7 @@
-import React, { Suspense } from 'react';
-
-const AIAssistant = React.lazy(() => import('../AIAssistant').then(m => ({ default: m.AIAssistant })));
-
-export const RightPanel = ({ stats, tasks }) => {
+export const RightPanel = ({ stats }) => {
   return (
     <aside className="layout-right-panel glass-panel">
        <div className="insights-header">
-         <h3>Insights</h3>
        </div>
 
        <div className="stat-card level-card" style={{ marginBottom: '1rem', padding: '1.25rem' }}>
@@ -28,12 +23,6 @@ export const RightPanel = ({ stats, tasks }) => {
              <div className="stat-number" style={{ fontSize: '1.4rem' }}>{stats.focusTime}m</div>
           </div>
        </div>
-
-       <Suspense fallback={<div className="loading-spinner"></div>}>
-          <div className="assistant-docker-wrapper">
-             <AIAssistant tasks={tasks} stats={stats} />
-          </div>
-       </Suspense>
     </aside>
   );
 };

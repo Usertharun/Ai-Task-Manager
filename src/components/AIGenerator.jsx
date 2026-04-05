@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { generateTasks } from '../services/aiService';
 
-export const AIGenerator = ({ onAddMultiple }) => {
+export const AIGenerator = ({ onAddMultiple, onSelectStep }) => {
   const [goal, setGoal] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
+  const [generatedSteps, setGeneratedSteps] = useState([]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,7 +17,7 @@ export const AIGenerator = ({ onAddMultiple }) => {
     try {
       const generatedTasks = await generateTasks(goal);
       if (generatedTasks && generatedTasks.length > 0) {
-        onAddMultiple(generatedTasks.reverse());
+        setGeneratedSteps(generatedTasks);
         setGoal('');
       } else {
         setError('No tasks were returned by the AI.');
@@ -52,6 +53,26 @@ export const AIGenerator = ({ onAddMultiple }) => {
         </button>
       </form>
       {error && <p className="ai-error">{error}</p>}
+      
+      {generatedSteps.length > 0 && (
+        <div className="ai-steps-container">
+          <p className="ai-steps-title">Suggested Tasks (Click to convert):</p>
+          <div className="ai-steps-list">
+            {generatedSteps.map((step, idx) => (
+              <button 
+                key={idx} 
+                className="ai-step-btn"
+                onClick={() => {
+                  if (onSelectStep) onSelectStep(step.title);
+                  setGeneratedSteps(prev => prev.filter((_, i) => i !== idx));
+                }}
+              >
+                {step.title}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

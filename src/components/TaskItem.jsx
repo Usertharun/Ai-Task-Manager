@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
 export const TaskItem = memo(({ 
@@ -10,7 +10,9 @@ export const TaskItem = memo(({
   onAddMultipleSubtasks,
   onToggleSubtask, 
   onDeleteSubtask,
-  onFocus
+  onFocus,
+  isActiveBreakdown,
+  onToggleBreakdown
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
@@ -19,6 +21,7 @@ export const TaskItem = memo(({
   const [isBreaking, setIsBreaking] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [breakdownGenerated, setBreakdownGenerated] = useState(null);
 
   const handleDelete = () => {
      setIsDeleting(true);
@@ -54,23 +57,34 @@ export const TaskItem = memo(({
     if (isBreaking) return;
     setIsBreaking(true);
     setAiError(null);
-    const toastId = toast.loading('Breaking down task...', { position: 'bottom-center' });
     try {
       const { breakTask } = await import('../services/aiService');
       const generatedSubtasks = await breakTask(task.title, task.description);
       if (generatedSubtasks && generatedSubtasks.length > 0) {
-        onAddMultipleSubtasks(task.id, generatedSubtasks);
-        if (!expanded) setExpanded(true);
-        toast.success("Task broken down!", { id: toastId, position: 'bottom-center' });
+        setBreakdownGenerated(generatedSubtasks);
       } else {
         setAiError("AI returned no logic breakdown.");
-        toast.error("No subtasks generated.", { id: toastId, position: 'bottom-center' });
       }
     } catch (err) {
       setAiError(err.message || "Failed AI Request");
-      toast.error("AI breakdown failed.", { id: toastId, position: 'bottom-center' });
     } finally {
       setIsBreaking(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isActiveBreakdown && !breakdownGenerated && !isBreaking && !aiError) {
+      handleAIBreakdown();
+    }
+  }, [isActiveBreakdown]);
+
+  const handleAddGeneratedSubtasks = () => {
+    if (breakdownGenerated && breakdownGenerated.length > 0) {
+      onAddMultipleSubtasks(task.id, breakdownGenerated);
+      toast.success("Subtasks added!", { position: 'bottom-center' });
+      setBreakdownGenerated(null);
+      onToggleBreakdown(null);
+      if (!expanded) setExpanded(true);
     }
   };
 
@@ -117,6 +131,7 @@ export const TaskItem = memo(({
                 </h3>
                 <button className="inline-edit-btn" onClick={() => setIsEditing(true)}>✎</button>
                 {!task.completed && <button className="inline-edit-btn" onClick={() => onFocus(task)} style={{marginLeft:'auto', opacity: 1, color:'var(--primary-color)'}} title="Enter Focus Mode">🎯 Focus</button>}
+                {!task.completed && <button className="inline-edit-btn" onClick={() => onToggleBreakdown(task.id)} style={{opacity: 1, color: isActiveBreakdown ? 'var(--primary-color)' : 'var(--text-muted)'}} title="AI Task Breakdown">✨ Breakdown</button>}
               </>
             )}
           </div>
@@ -170,19 +185,46 @@ export const TaskItem = memo(({
                 className="subtask-input"
               />
               <button type="submit" className="subtask-add-btn" disabled={!subtaskInput.trim()}>+</button>
-              <button 
-                 type="button" 
-                 onClick={handleAIBreakdown} 
-                 className={`ai-breakdown-btn ${isBreaking ? 'breaking' : ''}`}
-                 disabled={isBreaking}
-                 title="Auto-breakdown task with AI"
-              >
-                {isBreaking ? <div className="loading-spinner small"></div> : '✨'}
-              </button>
             </form>
           </div>
         )}
       </div>
+
+      {isActiveBreakdown && (
+        <div className="task-breakdown-panel">
+          <div className="task-breakdown-header">
+            <h4>✨ Task Breakdown</h4>
+            <button onClick={() => onToggleBreakdown(null)} className="close-breakdown-btn">×</button>
+          </div>
+          <div className="task-breakdown-content">
+             {isBreaking ? (
+                <div className="breakdown-loading">
+                  <div className="loading-spinner small"></div>
+                  <span>Analyzing task and generating optimal steps...</span>
+                </div>
+             ) : aiError ? (
+                <div className="ai-subtask-error" style={{ marginBottom: '1rem' }}>
+                   {aiError} <button onClick={handleAIBreakdown} className="inline-edit-btn" style={{opacity: 1}}>Try Again</button>
+                </div>
+             ) : breakdownGenerated && breakdownGenerated.length > 0 ? (
+                <>
+                   <ul className="breakdown-list">
+                     {breakdownGenerated.map((st, i) => <li key={i}>{st.title}</li>)}
+                   </ul>
+                   <div className="breakdown-actions">
+                     <button className="btn-cancel-breakdown" onClick={() => onToggleBreakdown(null)}>Cancel</button>
+                     <button className="btn-add-breakdown" onClick={handleAddGeneratedSubtasks}>Add to Subtasks</button>
+                   </div>
+                </>
+             ) : (
+                <div className="breakdown-loading">
+                  <span>Failed to parse breakdown.</span>
+                  <button onClick={handleAIBreakdown} className="inline-edit-btn" style={{opacity: 1}}>Try Again</button>
+                </div>
+             )}
+          </div>
+        </div>
+      )}
     </div>
   );
 });

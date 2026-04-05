@@ -6,6 +6,8 @@ const Dashboard = React.lazy(() => import('../Dashboard').then(m => ({ default: 
 const AIGenerator = React.lazy(() => import('../AIGenerator').then(m => ({ default: m.AIGenerator })));
 
 export const MainContent = ({ activeTab, tasks, stats, taskHandlers }) => {
+  const [prefilledTaskTitle, setPrefilledTaskTitle] = React.useState('');
+
   return (
     <main className="layout-main-content">
        {activeTab === 'dashboard' ? (
@@ -15,7 +17,10 @@ export const MainContent = ({ activeTab, tasks, stats, taskHandlers }) => {
        ) : (
          <>
            <Suspense fallback={null}>
-             <AIGenerator onAddMultiple={taskHandlers.addMultipleTasks} />
+             <AIGenerator 
+               onAddMultiple={taskHandlers.addMultipleTasks} 
+               onSelectStep={setPrefilledTaskTitle}
+             />
            </Suspense>
            
            <div className="divider-container">
@@ -24,7 +29,12 @@ export const MainContent = ({ activeTab, tasks, stats, taskHandlers }) => {
              <div className="divider"></div>
            </div>
 
-           <TaskInput onAdd={taskHandlers.handleWrappedTaskAdd} pendingCount={taskHandlers.pendingActionable} />
+           <TaskInput 
+             onAdd={taskHandlers.handleWrappedTaskAdd} 
+             pendingCount={taskHandlers.pendingActionable} 
+             initialTitle={prefilledTaskTitle}
+             onClearInitialTitle={() => setPrefilledTaskTitle('')}
+           />
            
            <div className="spacer" style={{ margin: '1.5rem 0' }}></div>
            

@@ -13,6 +13,11 @@ export const TaskList = ({
   onDeleteSubtask,
   onFocus
 }) => {
+  const [activeBreakdownTaskId, setActiveBreakdownTaskId] = React.useState(null);
+
+  const onToggleBreakdown = (taskId) => {
+    setActiveBreakdownTaskId(prev => prev === taskId ? null : taskId);
+  };
 
   const focusInput = () => {
     const input = document.getElementById('task-title-input');
@@ -89,6 +94,8 @@ export const TaskList = ({
               onToggleSubtask={onToggleSubtask}
               onDeleteSubtask={onDeleteSubtask}
               onFocus={onFocus}
+              isActiveBreakdown={activeBreakdownTaskId === task.id}
+              onToggleBreakdown={onToggleBreakdown}
             />
           ))}
         </div>

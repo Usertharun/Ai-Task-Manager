@@ -11,6 +11,8 @@ import { RightPanel } from './components/layout/RightPanel';
 import { MobileNav } from './components/layout/MobileNav';
 import { FocusModeWidget } from './components/FocusModeWidget';
 
+const AIAssistant = React.lazy(() => import('./components/AIAssistant').then(m => ({ default: m.AIAssistant })));
+
 const FallbackLoader = () => (
    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '5rem', gap: '1rem'}}>
       <div className="loading-spinner" style={{borderColor: 'rgba(99, 102, 241, 0.3)', borderTopColor: 'var(--primary-color)'}}></div>
@@ -50,6 +52,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [isPlanning, setIsPlanning] = React.useState(false);
   const [activeFocusTask, setActiveFocusTask] = React.useState(null);
+  const [isAssistantOpen, setIsAssistantOpen] = React.useState(false);
 
   const handleToggleTask = (id) => {
     const taskObj = tasks.find(t => t.id === id);
@@ -160,17 +163,34 @@ function App() {
          />
 
          <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => window.location.reload()}>
-           <div className="layout-grid">
-               <MainContent 
-                 activeTab={activeTab} 
-                 tasks={tasks} 
-                 stats={stats} 
-                 taskHandlers={taskHandlers} 
-               />
-               <RightPanel stats={stats} tasks={tasks} />
-           </div>
+             <MainContent 
+               activeTab={activeTab} 
+               tasks={tasks} 
+               stats={stats} 
+               taskHandlers={taskHandlers} 
+             />
          </ErrorBoundary>
       </div>
+
+      <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => window.location.reload()}>
+         <div className="layout-right-column">
+            <RightPanel stats={stats} tasks={tasks} />
+            
+            <div className={`assistant-container ${isAssistantOpen ? 'mobile-open' : ''}`}>
+              <Suspense fallback={<div className="loading-spinner"></div>}>
+                 <AIAssistant tasks={tasks} stats={stats} onClose={() => setIsAssistantOpen(false)} />
+              </Suspense>
+            </div>
+         </div>
+      </ErrorBoundary>
+
+      <button 
+         className="assistant-fab" 
+         onClick={() => setIsAssistantOpen(!isAssistantOpen)}
+         title="Open AI Assistant"
+      >
+         💬
+      </button>
 
       <FocusModeWidget 
         task={activeFocusTask} 

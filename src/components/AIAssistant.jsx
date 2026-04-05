@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { chatWithAssistant } from '../services/aiService';
 
-export const AIAssistant = ({ tasks, stats }) => {
+export const AIAssistant = ({ tasks, stats, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [inputVal, setInputVal] = useState('');
   
@@ -54,10 +54,20 @@ export const AIAssistant = ({ tasks, stats }) => {
   };
 
   return (
-    <div className="assistant-docker">
+    <div className="assistant-docker" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <div className="assistant-header" style={{ padding: '1rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 style={{fontSize: '1rem', margin: 0, background: 'var(--ai-gradient)', WebkitBackgroundClip: 'text', color: 'transparent', fontWeight: 800}}>🤖 AI Assistant</h3>
-        <button onClick={clearHistory} className="assistant-clear-btn" title="Clear History" style={{ background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.6 }}>🗑️</button>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+           <button onClick={clearHistory} className="assistant-clear-btn" title="Clear History" style={{ background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.6 }}>🗑️</button>
+           {onClose && (
+              <button 
+                 onClick={onClose} 
+                 className="assistant-close-btn" 
+                 title="Close Assistant" 
+                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)', lineHeight: 1 }}
+              >✕</button>
+           )}
+        </div>
       </div>
       
       <div className="assistant-messages" ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
