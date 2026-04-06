@@ -25,6 +25,17 @@ export const Dashboard = ({ tasks, stats }) => {
     return planned === 0 ? 0 : Math.round((completed / planned) * 100);
   }, [data]);
 
+  const bestDay = useMemo(() => {
+    let topDay = { name: 'N/A', rate: 0 };
+    data.forEach(d => {
+       const rate = d.Planned > 0 ? (d.Completed / d.Planned) : 0;
+       if (rate >= topDay.rate && d.Completed > 0) {
+         topDay = { name: d.name, rate };
+       }
+    });
+    return topDay.name;
+  }, [data]);
+
   return (
     <div className="dashboard-container animate-entry">
       <div className="dashboard-grid">
@@ -74,6 +85,18 @@ export const Dashboard = ({ tasks, stats }) => {
           </ResponsiveContainer>
         </div>
       </div>
+      
+      {bestDay !== 'N/A' && (
+        <div className="stat-card" style={{ background: 'var(--card-bg)', flexDirection: 'row', gap: '1rem', padding: '1rem 1.5rem', justifyContent: 'flex-start' }}>
+           <div style={{ fontSize: '2rem' }}>💡</div>
+           <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>AI Insight</div>
+              <div style={{ fontSize: '1rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                You are consistently most productive on <strong>{bestDay}s</strong>. Consider scheduling your Deep Work tasks on this day for maximum efficiency.
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

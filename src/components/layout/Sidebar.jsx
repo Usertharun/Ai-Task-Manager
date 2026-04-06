@@ -26,7 +26,6 @@ export const Sidebar = ({ activeTab, setActiveTab, stats }) => {
       </nav>
 
       <div className="sidebar-mini-stats">
-      <div className="sidebar-mini-stats">
         <div className="mini-stat">
           <span className="sidebar-label">Level</span>
           <span className="sidebar-mini-icon-only">⭐</span>
@@ -37,7 +36,6 @@ export const Sidebar = ({ activeTab, setActiveTab, stats }) => {
           <span className="sidebar-mini-icon-only">🔥</span>
           <strong>{stats.streak}d</strong>
         </div>
-      </div>
       </div>
     </aside>
   );

@@ -545,3 +545,12 @@ textarea { resize: vertical; min-height: 90px; }
   .task-title { font-size: 1rem; }
   .add-button { width: 100%; }
 }
+
+/* Skeleton Loading Animations */
+.skeleton-container { animation: skeletonFade 1.5s ease-in-out infinite alternate; }
+.skeleton-line { background: var(--glass-border); border-radius: 8px; position: relative; overflow: hidden; }
+.skeleton-line::after { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent); animation: skeletonShine 1.5s linear infinite; }
+[data-theme="light"] .skeleton-line::after { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent); }
+
+@keyframes skeletonFade { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+@keyframes skeletonShine { 0% { left: -100%; } 100% { left: 150%; } }

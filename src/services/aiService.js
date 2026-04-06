@@ -3,53 +3,61 @@ export const fetchGeminiText = async (prompt) => {
   
   if (apiKey) {
      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-     const response = await fetch(url, {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({
-         contents: [{ parts: [{ text: prompt }] }]
-       })
-     });
-     
-     if (!response.ok) {
-        const errText = await response.text();
-        try {
-           const errJson = JSON.parse(errText);
-           throw new Error(errJson.error?.message || "Unknown Gemini API Error");
-        } catch(e) {
-           throw new Error(`Gemini API Error: ${errText}`);
-        }
+     try {
+       const response = await fetch(url, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           contents: [{ parts: [{ text: prompt }] }]
+         })
+       });
+       
+       if (!response.ok) {
+          const errText = await response.text();
+          try {
+             const errJson = JSON.parse(errText);
+             throw new Error(errJson.error?.message || "Unknown Gemini API Error");
+          } catch(e) {
+             throw new Error(`Gemini API Error: ${errText}`);
+          }
+       }
+       
+       const data = await response.json();
+       return data.candidates[0].content.parts[0].text.trim();
+     } catch (e) {
+        throw new Error(e.message || "Failed to connect to Gemini API. Please check your network.");
      }
-     
-     const data = await response.json();
-     return data.candidates[0].content.parts[0].text.trim();
   }
 
   const url = `/api/generate`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });
-  
-  // Handle non-JSON responses gracefully (e.g. Vite serving index.html)
-  const contentType = response.headers.get("content-type");
-  if (!contentType || !contentType.includes("application/json")) {
-     throw new Error("Local dev without Vercel CLI detected. Please add VITE_GEMINI_API_KEY to .env to use the AI Assistant locally.");
-  }
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    
+    // Handle non-JSON responses gracefully (e.g. Vite serving index.html)
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+       throw new Error("Local dev without Vercel CLI detected. Please add VITE_GEMINI_API_KEY to .env to use the AI Assistant locally.");
+    }
 
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(data.error || "Failed to reach AI generation endpoint");
-  }
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to reach AI generation endpoint");
+    }
 
-  return data.text;
+    return data.text;
+  } catch (e) {
+      throw new Error(e.message || "Failed to connect to local /api/generate endpoint.");
+  }
 };
 
 export const generateTasks = async (goal) => {
   const prompt = `Deconstruct the following user goal into a list of 3-5 distinct, logical, and highly actionable tasks.
-Output ONLY a raw JSON array of objects with exactly this format (no markdown code blocks):
+Output ONLY a raw JSON array of objects with exactly this format (no markdown formatting, no \`\`\` code blocks):
 [{"title": "string", "description": "string", "category": "Work", "priority": "High"}]
 Categories: Work, Study, Personal. Priorities: High, Medium, Low.
 User Goal: ${goal}`;
@@ -58,24 +66,30 @@ User Goal: ${goal}`;
   let cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
   try {
      const parsed = JSON.parse(cleaned);
-     return Array.isArray(parsed) ? parsed : parsed.tasks || [];
+     return Array.isArray(parsed) ? parsed : (parsed.tasks || []);
   } catch(e) {
-     throw new Error("Failed to parse task generation output. Try again.");
+     console.error("AI Output could not be parsed: ", text);
+     throw new Error("Failed to parse task generation output. The AI might have returned improperly formatted text.");
   }
 };
 
 export const breakTask = async (title, description) => {
-  const prompt = `Break this task into 3–5 simple actionable subtasks in plain text bullet points (starting with "- "):
+  const prompt = `Break this task into 3–5 simple actionable subtasks in plain text bullet points (starting with "- "). Do not include any intro or outro text.
 Task Title: ${title}
 Task Description: ${description || "None"}`;
 
   const text = await fetchGeminiText(prompt);
   
   // Convert text response into usable array
-  return text.split('\n')
+  const subtasks = text.split('\n')
     .map(line => line.trim().replace(/^-\s*/, '').replace(/^\*\s*/, ''))
     .filter(line => line.length > 3)
     .map(t => ({ title: t }));
+    
+  if (subtasks.length === 0) {
+      throw new Error("AI returned no actionable subtasks.");
+  }
+  return subtasks;
 };
 
 export const chatWithAssistant = async (history, tasks, stats) => {

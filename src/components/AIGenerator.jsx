@@ -13,6 +13,7 @@ export const AIGenerator = ({ onAddMultiple, onSelectStep }) => {
     
     setIsGenerating(true);
     setError(null);
+    setGeneratedSteps([]);
     
     try {
       const generatedTasks = await generateTasks(goal);
@@ -26,6 +27,13 @@ export const AIGenerator = ({ onAddMultiple, onSelectStep }) => {
       setError(err.message || 'Failed to communicate with AI Service.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleAddAll = () => {
+    if (generatedSteps.length > 0) {
+      onAddMultiple(generatedSteps);
+      setGeneratedSteps([]);
     }
   };
 
@@ -54,9 +62,22 @@ export const AIGenerator = ({ onAddMultiple, onSelectStep }) => {
       </form>
       {error && <p className="ai-error">{error}</p>}
       
-      {generatedSteps.length > 0 && (
+      {isGenerating && (
+         <div className="skeleton-container" style={{marginTop: '1.5rem'}}>
+            <div className="skeleton-line" style={{width: '60%', height: '1.5rem', marginBottom: '0.8rem'}}></div>
+            <div className="skeleton-line" style={{width: '90%', height: '3rem', marginBottom: '0.5rem'}}></div>
+            <div className="skeleton-line" style={{width: '80%', height: '3rem', marginBottom: '0.5rem'}}></div>
+         </div>
+      )}
+
+      {generatedSteps.length > 0 && !isGenerating && (
         <div className="ai-steps-container">
-          <p className="ai-steps-title">Suggested Tasks (Click to convert):</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+             <p className="ai-steps-title" style={{ margin: 0 }}>Suggested Tasks (Click to edit):</p>
+             <button onClick={handleAddAll} className="add-button" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+                Add All as Tasks
+             </button>
+          </div>
           <div className="ai-steps-list">
             {generatedSteps.map((step, idx) => (
               <button 
@@ -67,7 +88,11 @@ export const AIGenerator = ({ onAddMultiple, onSelectStep }) => {
                   setGeneratedSteps(prev => prev.filter((_, i) => i !== idx));
                 }}
               >
-                {step.title}
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                  <span style={{fontWeight: 600}}>{step.title}</span>
+                  <span style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>{step.priority} • {step.category}</span>
+                </div>
+                {step.description && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.3rem', textAlign: 'left' }}>{step.description}</div>}
               </button>
             ))}
           </div>

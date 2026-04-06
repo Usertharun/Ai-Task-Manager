@@ -54,6 +54,35 @@ function App() {
   const [activeFocusTask, setActiveFocusTask] = React.useState(null);
   const [isAssistantOpen, setIsAssistantOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      // Cmd/Ctrl + K to focus task input (standard search shortcut pattern)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const input = document.getElementById('task-title-input');
+        if (input) {
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          input.focus();
+        }
+      }
+      // Cmd/Ctrl + Enter to trigger 'Plan My Day' when not focusing on input
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+         if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            handlePlanMyDay();
+         }
+      }
+      // Cmd/Ctrl + B to toggle Sidebar
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        setSidebarOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
   const handleToggleTask = (id) => {
     const taskObj = tasks.find(t => t.id === id);
     if (taskObj && !taskObj.completed) {
